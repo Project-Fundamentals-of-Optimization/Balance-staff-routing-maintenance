@@ -4,23 +4,39 @@ import copy
 # work_time = [0]+[int(_) for _ in input().split()]
 # distance = [[int(_) for _ in input().split()] for _ in range(n+1)]
 
-with open("input0.txt", "r") as file:
+with open("input/input5.txt", "r") as file:
     n, k = map(int, file.readline().split())
     work_time = [0] + list(map(int, file.readline().split()))
     distance = [list(map(int, file.readline().split())) for _ in range(n+1)]
 
-# print(n, k)
-# print(work_time)
-# print(distance)
 
-
-# print(work_time)
-# print(distance)
-
+def find_shortest_path(nodes):
+    n = len(nodes)
+    nodes = [0]+nodes
+    new_work_time = [work_time[node] for node in nodes]
+    total_time = sum(new_work_time)
+    new_distance = [[distance[nodes[i]][nodes[j]] for i in range(len(nodes))]for j in range(len(nodes))]
+    is_ = [0 for _ in range(n+1)]
+    path = [0]
+    is_[0]=1
+    for iter in range(len(nodes[1:])):
+        Select = -1
+        for next in range(n+1):
+            if not is_[next]:
+                if Select==-1:
+                    Select=next
+                elif new_distance[path[-1]][Select]>new_distance[path[-1]][next]:
+                    Select=next
+        is_[Select]=1
+        total_time += new_distance[path[-1]][Select]
+        path.append(Select)
+    total_time+=new_distance[path[-1]][0]
+    return total_time, [nodes[i] for i in path[1:]]
+    
 l,r = 0, int(1e5)
 bit_mask = [0 for _ in range(n+1)]
 max_branch = 2
-max_num_state = 10
+max_num_state = 2
 full_limit = None
 origin = None
 def wraper(max_time, bit_mask):
@@ -38,26 +54,28 @@ def wraper(max_time, bit_mask):
         # print(f"full lm {full_limit} - {n-sum(bit_mask)} - {bit_mask}")
         going_to_go_to_zero = True
         if n-sum(bit_mask)>full_limit:
-            for i in range(1,n+1):
-                if bit_mask[i]==0 and max_time+distance[u][0]-distance[u][i]-work_time[i]-distance[i][0]>=0:
+            for i in range(u+1,n+1):
+                
+                if bit_mask[i]==0 and find_shortest_path(cur_path+[i])[0]<=max_time:
                     bit_mask[i]=1
                     cur_path.append(i)
                     # print(f"from {u} to {i} cost {distance[u][i]-work_time[i]-distance[i][0]}")
-                    find_a_route(i, max_time+distance[u][0]-distance[u][i]-work_time[i]-distance[i][0])
+                    find_a_route(i, max_time)
                     cur_path.pop()
                     bit_mask[i]=0
                     going_to_go_to_zero = False
         if going_to_go_to_zero: 
             if len(cur_path)>0:
-                stack_of_paths.append([bit_mask[:],cur_path[:]])
+                stack_of_paths.append([bit_mask[:],find_shortest_path(cur_path)[1]])
                 # print(f"cheecccckkkk {cur_path} - {max_time} - max {origin}")
             if len(stack_of_paths)>max_num_state: stop_bruteforce = 1
     for start_point in range(1,n+1):
         if bit_mask[start_point]==0 and distance[0][start_point]+work_time[start_point]+distance[start_point][0]<max_time:
             bit_mask[start_point] = 1
             cur_path = [start_point]
-            find_a_route(start_point,max_time-(distance[0][start_point]+work_time[start_point]+distance[start_point][0]))
+            find_a_route(start_point,max_time)
             bit_mask[start_point] = 0
+    # if max
     return stack_of_paths
 
 max_great_num_state = 1000
@@ -80,7 +98,7 @@ def check(max_length):
                 return None
             # print(f"potential move:{potential_moves} at id {id} in max_length {max_length}")
             for move in potential_moves:
-                tmp = copy.deepcopy(senario)
+                tmp = senario[:]
                 tmp[0] = move[0]
                 tmp.append(move[1])
                 worker[id].append(tmp)
@@ -109,6 +127,7 @@ while r-l>1:
     else: l = m
     print(f"{l},{m},{r}: {perf_counter()-tin:.2f}s")
 
+print(last_state)
 for i in range(1,k+1):
     u = [0] + last_state[i]+[0]
     print(len(u))
